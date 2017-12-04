@@ -1,0 +1,1357 @@
+/* File: alloca_test.c */
+#include <stdio.h>
+#include <string.h>
+#include <alloca.h>
+int main(void)
+{
+	char *p = alloca(10);
+
+	strcpy(p, "hello world");
+
+	printf("%s\n", p);
+	
+	return 0;
+}
+/* File: a_plus_1.c */
+#include <stdio.h>
+int main(void)
+{
+	char a = 1;
+	char b = a + 1;
+	char c = -~a;
+	char d = -1;
+	char e = 0x80;
+	printf("b:%x, c:%x, d:%x, e:%d", b, c, d, e);
+	return 0;
+}
+/* File: array.c */
+#include <stdio.h>
+int main(void)
+{
+	int a[12][31];
+	int b, c, d;
+	
+	a[4][0] = 2;
+	a[4][7] = 1;
+	b = *(a[4] + 7);
+	c = *(*(a + 4) + 7);
+	d = *a[4] + 7;
+
+	printf("b: %d c: %d, d: %d\n", b, c, d);
+
+	return 0;
+}
+/* File: atof.c */
+#include <ctype.h>
+#include <math.h>
+#define _GNU_SOURCE
+#include <stdio.h>
+
+/* atof: convert string s to double */
+#if 0
+double atof(char s[])
+{
+	double val, power;
+	int i, sign;
+
+	for (i = 0; isspace(s[i]); i++) /* skip white space */
+		;
+	sign = (s[i] == '-') ? -1 : 1;
+	if (s[i] == '+' || s[i] == '-')
+		i++;
+	for (val = 0.0; isdigit(s[i]); i++)
+		val = 10.0 * val + (s[i] - '0');
+	if (s[i] == '.')
+		i++;
+
+	for (power = 1.0; isdigit(s[i]); i++) {
+		val = 10.0 * val + (s[i] - '0');
+		power *= 10;
+	}
+	return sign * val / power;
+}
+#endif
+
+double atof(char s[])
+{
+	double val, power, power2;
+	int i, sign;
+
+	for (i = 0; isspace(s[i]); i++) /* skip white space */
+		;
+	sign = (s[i] == '-') ? -1 : 1;
+	if (s[i] == '+' || s[i] == '-')
+		i++;
+	for (val = 0.0; isdigit(s[i]); i++)
+		val = 10.0 * val + (s[i] - '0');
+	if (s[i] == '.')
+		i++;
+	for (power = 1.0; isdigit(s[i]); i++) {
+		val = 10.0 * val + (s[i] - '0');
+		power *= 10;
+	}
+
+	power2 = 1.0;
+	if (s[i] == 'E' || s[i] == 'e') {
+		i++;
+		if (s[i] != '-')
+			goto out;
+		i++;
+		for (power2 = 0.0; isdigit(s[i]); i++) {
+			power2 = 10.0 * power2 + (s[i] - '0');
+		}
+		power2 = pow(10.0, power2);
+	}
+out:
+	return sign * val / power / power2;
+}
+
+main()
+{
+	double sum, atof(char []);
+	char *line = NULL;
+	size_t len;
+	//int getline(char line[], int max);
+
+	sum = 0;
+	while (getline(&line, &len, stdin) > 0)
+		printf("\t%g\n", sum += atof(line));	
+	if (line)
+		free(line);
+
+	return 0;
+}
+/* File: attribute.c */
+#include <stdio.h>
+#if 0
+struct e_struct {
+        char a;
+        int b;
+        long c;
+} __attribute__ ((aligned(4)));
+struct e_struct {
+        char a;
+        int b __attribute__ ((packed));
+        long c __attribute__ ((packed));
+};
+#else
+
+struct e_struct {
+        char a;
+        int b;
+        long c;
+} __attribute__ ((packed));
+#endif
+
+int main(void)
+{
+        printf("%d\n", sizeof(struct e_struct));
+}
+/* File: baud.c */
+#include "types.h"
+#include <stdio.h>
+#if 0
+
+                if (L[i] > C)
+                        error = (L[i] - C) * 20 / (float)C;
+                else
+                        error = (C - L[i]) * 20 / (float)C;
+
+                if (error < 1)
+                        return L[i];
+#endif
+
+/*according clk, calculate best baud */
+uint32_t cal_baud(uint32_t uart_clk)
+{
+        uint32_t divisor, C, L[6] = {115200, 57600, 38400, 19200, 14400, 9600}; //ClientBR, LocalBR
+        float div, left, right;
+        uint8_t i;
+        
+        for (i = 0; i < 6; i++) {
+                div = uart_clk / L[i] / 16.0;
+                divisor = (uint32_t)div;
+                if ((div - (float)divisor) >= 0.5)
+                        ++divisor;
+                if (!divisor)
+                        return 0;
+                C = uart_clk / divisor / 16.0;
+                if (L[i] > C) {
+                        left  = ((1/(float)C) - (1/(float)L[i])) * 10.0;
+                } else {
+                        left = ((1/(float)L[i]) - (1/(float)C)) * 10.0;
+                }
+                right = (1/2.0) * (1/(float)L[i]);
+                printf("baudrate: %d left: %f right:%f\n", L[i], left, right);
+#if 0
+                if (left < right)
+                        return L[i];
+#endif
+        }
+
+        return 0; 
+}
+
+int main(void)
+{
+        uint32_t uart_clk, ahb_clk;
+        uint32_t baudrate;
+        uint8_t i, j;
+#if 0
+        for (i = 1; i < 16; i++) {
+                for (j = 0; j < 16; j++) {
+                        ahb_clk  = 50000000 / (i + 1);
+                        uart_clk = 50000000 / (i + 1) / (j + 1);
+                        baudrate = cal_baud(uart_clk);
+                        printf("ahbdiv:%d apb2div:%d ahbclk:%fMHz uartclk:%fMHz baudrate:%d\n", i, j, ahb_clk/1000000.0, uart_clk/1000000.0, baudrate);
+                }
+        }
+#endif
+        baudrate = cal_baud(25000000);
+
+        return 0;
+}
+/* File: const.c */
+#include <stdio.h>
+int main(void)
+{
+        char *cp;
+        const char *cpp;
+        //cpp = cp;
+        cp = cpp;
+
+}
+/* File: count_char.c */
+#include <stdio.h>
+/* how about OOP? but lose simplicity */
+#if 0
+main()
+{
+	int c, nspace = 0, ntab = 0, nnewline = 0;
+
+	while ((c = getchar()) != EOF) {
+		if (c == ' ') {
+			++nspace;	
+		} else if (c == '\t') {
+			++ntab;
+		} else if (c == '\n') {
+			++nnewline;	
+		}
+	}
+	printf("num space: %d, num tab: %d, num newline: %d\n",
+		nspace, ntab, nnewline);
+}
+#endif
+
+/* OOP implementation */
+typedef struct statis {
+	char name;
+	int cnt;
+} statis_t;
+
+#define NR_ASCII	(128)
+statis_t STATIS[NR_ASCII];
+
+void init_statis(void)
+{
+	int i;
+	statis_t *p;
+
+	for (i = 0; i < NR_ASCII; ++i) {
+		p = &STATIS[i];	
+		p->name = i;
+		p->cnt  = 0;
+	}
+}
+
+void print_statis(void)
+{
+	statis_t *p;
+	int i;
+	
+	for (i = 0; i < NR_ASCII; ++i) {
+		p = &STATIS[i];
+		printf("%c : %d\n", p->name, p->cnt);
+	}
+}
+
+main()
+{
+	int c;
+
+	init_statis();
+	while ((c = getchar()) != EOF) {
+		++STATIS[c].cnt;
+	}
+	print_statis();
+}
+/* File: data.c */
+#include <stdio.h>
+
+typedef unsigned char uint8_t;
+
+typedef struct data_s {
+	uint8_t a;
+	uint8_t b[0];
+} __attribute__((__packed__)) data_t;
+
+void main(void)
+{
+	printf("sizeof(data_t): %d\n", sizeof(data_t));
+
+	return 0;
+}
+/* File: double.c */
+#include <stdio.h>
+main(void)
+{
+	int a = 23;
+	int b = 2;
+
+	double c = a / b;
+
+	printf("%f\n", c);
+
+	return 0;
+}
+/* File: ending.c */
+#include <stdio.h>
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+union ending_u {
+        uint32_t a;
+        uint8_t  b;
+}u;
+int main(void)
+{
+       u.a = 0x12345678;
+       printf("u.a = %x\n",u.a);
+       printf("u.b = %x\n",u.b);
+
+       if (u.b == 0x12) {
+                printf("machine is big ending\n"); 
+       } else if (u.b == 0x78) {
+                printf("machine is little ending\n"); 
+       }
+
+       return 0;
+}
+/* File: eoftest.c */
+#include <stdio.h>
+main()
+{
+        printf("%d\n", EOF);
+        printf("%c\n", EOF);
+}
+/* File: exit_code.c */
+#include <stdio.h>
+int main()
+{
+        printf("hello world\n");
+}
+/* File: f2ctbl.c */
+#include <stdio.h>
+
+main()
+{
+	float fahr, celsius;
+	int lower, upper, step;
+
+	lower = 0;
+	upper = 300;
+	step  = 10;
+	
+	printf("Fahrenheit    Celsius\n");
+	printf("=========================\n");
+
+	fahr = lower;
+	while (fahr <= upper) {
+		celsius = (5.0 / 9.0) * (fahr - 32.0);
+		printf("%3.0f           %6.1f\n", fahr, celsius);
+		fahr += step;
+	}
+
+	lower = -100;
+	upper = 100;
+	step  = 10;
+
+	printf("Celsius    Fahrenheit    \n");
+	printf("=========================\n");
+
+	celsius = lower;
+	while (celsius <= upper) {
+		fahr = celsius * 9.0 / 5.0 + 32.0;
+		printf("%6.1f         %3.0f\n", celsius, fahr);
+		celsius += step;
+	}
+
+	return 0;
+}
+/* File: file.c */
+#include <file.h>
+/* File: float.c */
+#include <stdio.h>
+int main(void)
+{
+        float percent;
+
+        percent = (float) ((100 - 10) / 100);
+        //percent = 0.1;
+        printf("%f\n", percent);
+
+        return 0;
+}
+/* File: fork.c */
+#include <unistd.h> 
+#include <stdio.h>
+#include <stdlib.h>
+
+int globvar = 6;
+char buf[] = "a write to stdout\n";
+
+int main(void)
+{
+	int var; /* automatic variable on the stack */
+	pid_t pid;
+	var = 88;
+	if (write(STDOUT_FILENO, buf, sizeof(buf)-1) != sizeof(buf)-1)
+		printf("write error");
+	printf("before fork\n"); /* we don¡¯t flush stdout */
+
+	if ((pid = fork()) < 0) {
+		printf("fork error");
+	} else if (pid == 0) { /* child */
+		while (1) {
+			sleep(2);	
+			globvar++; /* modify variables */
+			var++;
+			printf("%s[%d] pid = %ld, glob = %d, var = %d\n", __func__, __LINE__, (long)getpid(), globvar,
+				var);
+		}
+	} else {
+		sleep(2); /* parent */
+	}
+	printf("pid = %ld, glob = %d, var = %d\n", (long)getpid(), globvar,
+		var);
+	exit(0);
+}
+/* File: hello.c */
+#include <stdio.h>
+int main(void)
+{
+        printf("sizeof(char): %d\n", sizeof(char));
+        printf("sizeof(unsigned char): %d\n", sizeof(unsigned char));
+        printf("sizeof(short): %d\n", sizeof(short));
+        printf("sizeof(unsigned short): %d\n", sizeof(unsigned short));
+        printf("sizeof(int): %d\n", sizeof(int));
+        printf("sizeof(unsigned int): %d\n", sizeof(unsigned int));
+        printf("sizeof(long): %d\n", sizeof(long));
+        printf("sizeof(unsigned long): %d\n", sizeof(unsigned long));
+        printf("sizeof(long long): %d\n", sizeof(long long));
+        printf("sizeof(long int): %d\n", sizeof(long int));
+        return 0;
+}
+/* File: helloworld.c */
+#include <stdio.h>
+main()
+{
+        printf("\c");
+}
+/* File: in2out.c */
+#include <stdio.h>
+main()
+{
+        int c;
+        c = getchar();
+        while (c != EOF) {
+                putchar(c); 
+                c = getchar();
+        }
+}
+/* File: invalid_mem.c */
+#include <stdio.h>
+int invalid_mem(int size, unsigned char *mac_list)
+{
+        int i;
+        unsigned char *p;
+        p = mac_list;
+        for (i = 0; i < size; i++, p++) {
+                printf("addr: %lu ", p);
+                printf("value: %lu \n", *p);
+        }
+        return 0;
+}
+
+int main(void)
+{
+        unsigned char test[5] = {0, 1, 2, 3, 4};
+        invalid_mem(100, test);
+        return 0;
+}
+/* File: itoa.c */
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+
+void reverse(char s[])
+{
+	int i, j, c;
+
+	for (i = 0, j = strlen(s)-1; i < j; i++, j--) {
+		c = s[i];	
+		s[i] = s[j];
+		s[j] = c;
+	}
+}
+
+/*
+void itoa(int n, char s[])
+{
+	int i, sign, flag = 0;
+
+	if ((sign = n) < 0) {
+		if (n == -pow(2, 31)) {
+			n = n + 1;	
+			flag = 1;
+		}
+		n = -n;
+	}
+	
+	i = 0;
+	do {
+		s[i++] = n % 10 + '0';	
+	} while (( n /= 10) > 0);
+
+	if (sign < 0) {
+		s[i++] = '-';	
+	}
+	if (flag)
+		s[0]++;	
+
+	s[i] = '\0';
+	reverse(s);
+}*/
+
+void itoa(int n, char s[], int width)
+{
+	int i, j, sign, flag = 0;
+
+	if ((sign = n) < 0) {
+		if (n == -pow(2, 31)) {
+			n = n + 1;	
+			flag = 1;
+		}
+		n = -n;
+	}
+	
+	i = 0;
+	j = 0;
+	do {
+		s[i++] = n % 10 + '0';	
+		j++;
+	} while (( n /= 10) > 0);
+
+	if (sign < 0) {
+		s[i++] = '-';	
+	}
+	
+	while (j < width) {
+		s[j++] = ' ';
+	}
+	if (flag)
+		s[0]++;	
+
+	s[j] = '\0';
+	reverse(s);
+}
+
+/*
+ * normal bases is already known as 2, 8, 10, 16, 
+ * other base such as 10 ~ 16 we use character 'A' ~ 'F',
+ * consequently, base bigger than 16, should as 'G' ~ 'Z',
+ * biggest base as 'Z', which means base 35.
+ */
+void itob(int n, char s[], int b)
+{
+	int i, tmp, sign, flag = 0;
+
+	if (b > ('Z' - 'A' + 10)) {
+		printf("invalid base\n");
+		return;
+	}
+	if ((sign = n) < 0) {
+		if (n == -pow(2, 31)) {
+			n = n + 1;	
+			flag = 1;
+		}
+		n = -n;
+	}
+	i = 0;
+	do {
+		tmp = n % b;
+		if (tmp < 10) {
+			s[i++] = tmp + '0';
+		} else {
+			s[i++] = tmp + 55;	
+		}
+	} while (( n /= b) > 0);
+
+	if (sign < 0) {
+		s[i++] = '-';	
+	}
+	if (flag)
+		s[0]++;	
+
+	s[i] = '\0';
+	reverse(s);
+}
+
+main()
+{
+	int n;
+	char s[128];
+
+	//n = -pow(2, 31);
+	n = 31;
+	printf("%8d\n", n);
+	//itob(n, s, 15);
+	itoa(n, s, 8);
+	printf("%s\n", s);
+
+	return;
+}
+/* File: lexical.c */
+#include <stdio.h>
+int main(void)
+{
+	int a = 1;
+	int b = 2;
+	int c = ++a+(++b);
+
+	printf("%d\n", c);
+
+	return 0;
+}
+/* File: line_longer_than_80.c */
+/* print the longest line */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define NR_READ_LIMIT	(80)
+
+typedef struct string_s {
+	int len;
+	char *str;
+	struct string_s *next;
+} string;
+
+int main(void)
+{
+	char *line = NULL;
+	string *str = NULL;
+	int len = 0;
+	int max = 0;
+	int read;
+	
+	while ((read = getline(&line, &len, stdin)) > 0)
+		if (read > NR_READ_LIMIT) {
+			//TODO
+		}
+
+	//display strings
+	//free strings
+	
+	return 0;
+}
+/* File: longest_line.c */
+/* print the longest line */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(void)
+{
+	char *line = NULL;
+	char *longest = NULL;
+	int len = 0;
+	int max = 0;
+	int read;
+	
+	while ((read = getline(&line, &len, stdin)) > 0)
+		if (read > max)	{
+			max = read;	
+			free(longest);
+			longest = malloc(len);
+			if (!longest) {
+				printf("no memory!\n");
+				return -1;
+			}
+			strcpy(longest, line);
+		}
+	if (max > 0)
+		printf("%s", longest);
+
+	free(line);
+	free(longest);
+
+	return 0;
+}
+/* File: loop.c */
+#include <stdio.h>
+int main(void)
+{
+        int i = 0;
+        for (i = 0; i < 10; ++i) {
+                printf("i: %d\r\n", i);
+                continue; 
+        }
+        return 0;
+}
+/* File: macro.c */
+#include <stdio.h>
+#if 1
+
+#else
+#    error "Build Properties, testing error happens!"
+#endif
+int main(void)
+{
+        printf("hello world!\n");
+}
+/* File: mem_zero.c */
+#include <stdio.h>
+
+main()
+{
+	char *p;
+
+	p = NULL;
+	printf("Location 0 contains %d\n", *p);
+
+	return 0;
+}
+/* File: nulltest.c */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main(void)
+{       
+        char c = '!'; 
+        char d = '%'; 
+        int tmp = c;
+        printf("%d \n", tmp);
+        tmp = d;
+        printf("%d \n", tmp);
+        return 0;
+}
+/* File: pointarray.c */
+#include <stdio.h>
+int main()
+{
+        int *p[5];
+        int *q = NULL;
+        int a[5] = {1, 2, 3, 4, 5};
+        int index;
+        *p = a;
+        for(index = 0; index < 5; index++){
+                printf("addr: %x ", p[index]);
+                printf("value: %x \n",*p[index]);
+        }
+
+        printf("\n");
+        q = *p; 
+        for(index = 0; index < 5; index++){
+                printf("addr: %x ", &q[index]);
+                printf("value: %x \n", q[index]);
+        }
+
+        return 0;
+
+}
+/* File: print_words_length.c */
+#include <stdio.h>
+/* OOP implementation */
+typedef struct statis {
+	char name;
+	int cnt;
+} statis_t;
+
+#define NR_ASCII	(128)
+statis_t STATIS[NR_ASCII];
+
+void init_statis(void)
+{
+	int i;
+	statis_t *p;
+
+	for (i = 0; i < NR_ASCII; ++i) {
+		p = &STATIS[i];	
+		p->name = i;
+		p->cnt  = 0;
+	}
+}
+
+void print_statis(void)
+{
+	statis_t *p;
+	int i;
+	
+	for (i = 0; i < NR_ASCII; ++i) {
+		p = &STATIS[i];
+		printf("%c : %d\n", p->name, p->cnt);
+	}
+}
+
+main()
+{
+	int c;
+
+	init_statis();
+	while ((c = getchar()) != EOF) {
+		++STATIS[c].cnt;
+	}
+	print_statis();
+}
+/* File: privilege.c */
+#include <stdio.h>
+int main()
+{
+        unsigned char a[10] = {5, 10, 15, 4, 5, 6, 7, 8, 9, 10};
+        unsigned char *p = NULL;
+        unsigned char x, y, z;
+        p = a;
+        x = (*p++);
+        y = (*p++);
+        z = (*p++);
+        printf(" x: %d y: %d z: %d\n", x, y, z);
+        return 0;
+}
+/* File: random.c */
+#include <stdlib.h>
+#include <stdio.h>
+
+static unsigned long next = 1;
+
+/*RAND_MAX assumed to be 32767*/
+int myrand(void)
+{
+        next = next * 1103515245 + 12345;
+        return ((unsigned)(next/65536) % 32768);
+}
+
+void mysrand(unsigned seed)
+{
+        next = seed;
+}
+
+int main(void)
+{
+        int tmp,i;
+        float tmpp;
+
+        srand(time(NULL));
+        for (i = 0; i < 100; i++) {
+                if ((i % 10) == 0)
+                        printf("\n");
+                tmp = 1 + (int) (10 * (rand() / (RAND_MAX + 1.0)));
+                printf("%d ", tmp);
+        }
+
+        return 0;
+}
+/* File: reverse.c */
+#include <stdio.h>
+static inline void swap(char *a, char *b)
+{
+	char tmp;
+
+	tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+main()
+{
+	char *line = NULL;
+	int  len = 0;
+	int read;
+	int i;
+
+	while ((read = getline(&line, &len, stdin)) != -1) {
+
+		for (i = 0; i < read / 2; ++i)
+			swap(&line[i], &line[(read - 1) - i]);
+		printf("%s\n", line);
+	}
+
+	free(line);
+}
+/* File: same_var_and_func.c */
+#include <stdio.h>
+
+//int a[];
+//int a;
+
+void a()
+{
+	printf("hello world\n");
+}
+
+main()
+{
+	int a[12];
+
+	a[0] = 1;
+
+	//a();
+
+	return 0;
+}
+
+/**
+ * Conclusion:
+ *	if the same symbol used both function and variable, it is
+ *	not allowed. But if you do not invoke the function, just
+ *	define the function, and use the same symbol to define a
+ *	local variable, do some actions on it, the compiler never
+ *	complain. Global variable and function with the same
+ *	symbol will not allowed.
+ *
+ **/
+
+/* File: signedchar.c */
+#include <stdio.h>
+
+
+main(void)
+{
+	signed char array[32] = "hello world\n";
+	signed char *a = array;
+	char *b = NULL;
+	b = a;
+	printf("%s\n", b);
+
+	return 0;
+}
+/* File: sqrt.c */
+#include <stdio.h>
+//double sqrt(double);
+double sqrt();
+
+main()
+{
+	double s;
+
+	s = sqrt(2.0);
+	printf("%g\n", s);
+	
+	return 0;
+}
+/* File: squeeze.c */
+/* 
+ * File: squeeze.c
+ * Description:
+ *	simulate xor of string s1 and s2:
+ *	if s1[i] == s2[i], delete it from s1
+ * History:
+ *	Jan 8, 2016	Tgni	Create
+ */
+#include <stdio.h>
+
+int isfind(char s[], char c) 
+{
+	int i;
+
+	for (i = 0; s[i] != '\0'; i++) {
+		if (s[i] == c) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void squeeze(char s1[], char s2[])
+{
+	int i, j;
+
+	for (i = j = 0; s1[i] != '\0'; i++) {
+		if (!isfind(s2, s1[i])) {
+			s1[j++] = s1[i];
+		}
+	}
+	s1[j] = '\0';
+}
+
+main()
+{
+#if 0
+	/* Take Care! 
+	 * string literal, cannot be changed!
+	 * we can never use pointer to allocate memory
+	 * except string literal, even it does, string
+	 * literal still cannot be change.
+	 */
+	char *s1 = "hI, beautiful world";
+	char *s2 = "hello world";
+#else
+	char s1[] = "hI, beautiful world";
+	char s2[] = "hello world";
+#endif
+	printf("s1: %s\n", s1);
+	printf("s2: %s\n", s2);
+	squeeze(s1, s2);
+	printf("s1: %s\n", s1);
+	printf("s2: %s\n", s2);
+
+	return;
+}
+/* File: stack_mem.c */
+#include <stdio.h>
+char *stackmem(void)
+{
+        char p[100] = "hello world!\r\n";
+        return p;
+}
+#if 0
+char *stackmem(void)
+{
+        char p[100];
+        strcpy(p, "hello world \r\n");
+        return p;
+}
+char *stackmem(void)
+{
+        char p[100];
+        p[0] = 'h';
+        p[1] = 'e';
+        p[2] = 'l';
+        p[3] = 'l';
+        p[4] = 'o';
+        p[5] = ' ';
+        p[6] = '\n';
+        p[7] = '\0';
+        return p;
+}
+#endif
+int main(void)
+{
+        char *str = NULL;
+        str = stackmem();
+        printf("%s", str);
+        return 0;
+}
+/* File: test_global_local_same.c */
+#include <stdio.h>
+
+int p = 100;
+
+int set_var(int *p)
+{
+        p = p;
+
+        return 0;
+}
+
+int main(void)
+{
+        int *q, a = 10;
+        q = &a;
+        set_var(q);
+        printf("%c", p);
+
+        return 0;
+}
+/* File: test_pointer.c */
+#include <stdio.h>
+
+typedef struct task_s {
+        int a;
+        int b;
+        int c;
+        int d;
+        struct task_s *sp;
+        struct task_s *_sp;
+} task_t;
+
+int main(void)
+{
+        int size;
+        task_t *sp, *_sp;
+        task_t stack[1024];
+
+        sp = &stack[0];
+        _sp = &stack[1023];
+        size = _sp - sp;    
+
+        printf("sp:%p  _sp:%p\n", sp, _sp);
+
+        printf("%d\n", size);
+
+        return 0;
+}
+/* File: testwhile.c */
+#include <stdio.h>
+
+#define IDX_MAX		(8)
+
+int get_idx_status(int idx)
+{
+	static cnt = 0;
+	if (++cnt > IDX_MAX) {
+		cnt = 0;	
+		return 1;
+	}
+	return 0;
+}
+
+int main(void)
+{
+	int idx = 0;
+
+//	while (idx < IDX_MAX && (get_idx_status(idx) ? 1 : ++idx));
+	while (idx < IDX_MAX) {
+		if(get_idx_status(idx)) {
+			++idx;	
+		}
+	}
+
+	printf("%d\n", idx);
+
+	return 0;
+}
+/* File: trim_blanks.c */
+/*
+ * Description:
+ *	replace each string of one or more blanks by a single blank
+ */ 
+
+#include <stdio.h>
+main()
+{
+	int c, old = EOF;
+
+	while ((c = getchar()) != EOF) {
+		if (c == ' ' && old == ' ')
+			continue;
+		putchar(c);
+		old = c;
+	}
+}
+/* File: types.h */
+/*
+ * Copyright: (c) 2006-2007, 2008 Triductor Technology, Inc.
+ * All Rights Reserved.
+ *
+ * File:        types.h
+ * Purpose:     The primitive types for the whole project.
+ * History:     10/15/2006, created by andyzhou
+ */
+
+#ifndef _TYPES_H
+#define _TYPES_H
+
+
+typedef unsigned char		BOOLEAN;
+typedef unsigned char		INT8U;
+typedef signed char		INT8S;
+typedef unsigned short		INT16U;
+typedef signed short		INT16S;
+typedef unsigned int		INT32U;
+typedef signed int		INT32S;
+typedef float			FP32;
+typedef double			FP64;
+
+typedef long long		INT64S;                 
+typedef unsigned long long	INT64U;
+
+
+typedef unsigned long		ulong_t;
+typedef unsigned int		uint32_t;
+typedef unsigned short		uint16_t;
+typedef unsigned char		uint8_t;
+
+
+typedef long			long_t;
+typedef int			int32_t;
+typedef short			int16_t;
+typedef signed char		int8_t;
+
+
+#define htons(n)		((uint16_t)(((n) & 0xff) << 8) | (((n) & 0xff00) >> 8))
+#define htonl(n)		((uint32_t)( \
+				(((uint32_t)(n) & (uint32_t)0x000000ffUL) << 24) | \
+				(((uint32_t)(n) & (uint32_t)0x0000ff00UL) <<  8) | \
+				(((uint32_t)(n) & (uint32_t)0x00ff0000UL) >>  8) | \
+				(((uint32_t)(n) & (uint32_t)0xff000000UL) >> 24)))
+#define ntohs(n)		htons(n)
+#define ntohl(n)		htonl(n)
+
+
+#define __isr__
+#define __ghn_wq__
+#define __tmr__
+
+
+#define DISPLAY_MSG		0
+
+#define DISABLE			0
+#define ENABLE			1
+
+#define MAX(a,b)		((a) >= (b) ? (a) : (b))
+#define MIN(a,b)		((a) <= (b) ? (a) : (b))
+#define US_SWAP(a)		((a) = (INT16U)(((INT16U)(a) >> 8) | ((INT16U)(a) << 8)))
+#define mod_ceiling(a, b)	(((a) + (b) - 1) / (b))
+#define mod_floor(a, b)		((a) / (b))
+
+#ifndef NULL
+#define NULL			0
+#endif
+
+#ifndef TRUE
+#define TRUE			(1 == 1)
+#endif
+
+#ifndef FALSE
+#define FALSE			(!TRUE)
+#endif
+
+#ifndef OK
+#define OK			0
+#endif
+
+#ifndef ERROR
+#define ERROR			-1
+#endif
+
+static __inline__ void split_write_two(uint8_t *addr, uint16_t two, uint8_t endian)
+{
+	uint8_t byte0, byte1;
+	
+	byte0 = (two & 0xff);
+	byte1 = (two & 0xff00) >> 8;
+
+	if (endian) {
+		*addr = byte1;
+		*(addr+1) = byte0;
+	} else {
+		*addr = byte0;
+		*(addr+1) = byte1;
+	}
+	
+	return;
+}
+
+#define split_read_two(addr, endian)			\
+	((endian) ?					\
+	 (uint16_t)((*(addr) << 8) | (*(addr+1))) :	\
+	 (uint16_t)((*(addr)) | (*(addr+1) << 8)))
+
+static __inline__ void split_write_four(uint8_t *addr, uint32_t four, uint8_t endian)
+{
+	uint8_t byte0, byte1, byte2, byte3;
+	
+	byte0 = (four & 0xff);
+	byte1 = (four & 0xff00) >> 8;
+	byte2 = (four & 0xff0000) >> 16;
+	byte3 = (four & 0xff000000) >> 24;
+
+	if (endian) {
+		*addr     = byte3;
+		*(addr+1) = byte2;
+		*(addr+2) = byte1;
+		*(addr+3) = byte0;
+	} else {
+		*addr     = byte0;
+		*(addr+1) = byte1;
+		*(addr+2) = byte2;
+		*(addr+3) = byte3;
+	}
+	return;
+}
+
+
+#define split_read_four(addr, endian)					\
+	((endian) ?							\
+	 (uint32_t)((*(addr) << 24) | (*(addr+1) << 16) | (*(addr+2) << 8) | (*(addr+3))) : \
+	 (uint32_t)((*(addr)) | (*(addr+1) << 8) | (*(addr+2) << 16) | (*(addr+3) << 24)))
+
+
+/*
+ *      These inlines deal with timer wrapping correctly. You are
+ *      strongly encouraged to use them
+ *      1. Because people otherwise forget
+ *      2. Because if the timer wrap changes in future you won't have to
+ *         alter your driver code.
+ *
+ * time_after(a,b) returns true if the time a is after time b.
+ *
+ * Do this with "<0" and ">=0" to only test the sign of the result. A
+ * good compiler would generate better code (and a really good compiler
+ * wouldn't care). Gcc is currently neither.
+ *
+ *	Note: a, b shall both be unsigned long integers. a shall not be
+ * far too much from b.
+ */
+#define time_after(a,b)		((long)(b) - (long)(a) < 0)
+#define time_before(a,b)	time_after(b,a)
+#define time_after_eq(a,b)	((long)(a) - (long)(b) >= 0)
+#define time_before_eq(a,b)	time_after_eq(b,a)
+#define time_diff(a,b)		(unsigned long)((long)(a) - (long)(b))
+
+#endif	/* end of _TYPES_H */
+/* File: visible.c */
+/*
+ * visible blanks, tabs, backslash
+ */
+
+#include <stdio.h>
+main()
+{
+	int c;
+
+	while ((c = getchar()) != EOF) {
+		if (c == ' ') {
+			printf("\\b");
+		} else if (c == '\t') {
+			printf("\\t");
+		} else if (c == '\\') {
+			printf("\\\\");	
+		} else {
+			putchar(c);	
+		}
+	}
+}
+/* File: word_per_line.c */
+/*
+ * one word, one line
+ */
+
+#include <stdio.h>
+
+main()
+{
+	int c, old = EOF;
+
+	while ((c = getchar()) != EOF) {
+		if (c == ' ' || c == '\t') {	
+			if (old == ' ' || old == '\t')
+				continue;
+			else
+				putchar('\n');
+		} else {
+			putchar(c);	
+		}
+		old = c;
+	}
+}
+
+/* 
+ * What if the last word with continuing on blank or tab?
+ * The last blank or tab cannot be detected as followed by EOF.
+ * Here solution should be use memory to save all words, and
+ * trim last blank or tab. As for which way to save words doesn't
+ * matter.
+ * And we don't escape special chars or punctuation such as: 
+ * (,.:;...) comma, full stop, colon, semicolon ... etc.
+ */
