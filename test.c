@@ -1,38 +1,25 @@
 #include <stdio.h>
-#include "types.h"
 
-int32_t get_size_a(uint16_t wp, uint16_t rp)
+void main(void)
 {
-	return (wp - rp) & 0x1fff;
-}
+	float a = 0.5;
+	float b = 1.5;
+	float c = -12.5;
+	float d = -8.25;
 
-int32_t get_size_b(uint16_t wp, uint16_t rp)
-{
-	int16_t _wp, _rp;
-	int32_t size;
+	unsigned int *pa = NULL;
+	pa = (unsigned int *)&a;
+	
+	unsigned int *pb = NULL;
+	pb = (unsigned int *)&b;
 
-	_wp = (int16_t)wp;
-	_rp = (int16_t)rp;
-	size = _wp - _rp;
-	size = (size >= 0) ? size : 8192 + size;
+	unsigned int *pc = NULL;
+	pc = (unsigned int *)&c;
 
-	return size;
-}
+	unsigned int *pd = NULL;
+	pd = (unsigned int *)&d;
 
-int main(void)
-{
-	uint16_t rp, wp;
-	int32_t i, sza, szb;
+	printf("a: %08x b: %08x c: %08x d: %08x\n", *pa, *pb, *pc, *pd);
 
-	for (rp = 0; rp < 8192; ++rp) {
-		for (wp = 0; wp < 8192; ++wp) {
-			sza = get_size_a(wp, rp);
-			szb = get_size_b(wp ,rp);
-			if (sza != szb)
-				printf("sza: %d, szb: %d, wp: %d rp: %d\n", sza, szb, wp, rp);
-		}
-	}
-
-	return 0;
-
+	return;
 }
