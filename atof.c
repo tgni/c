@@ -1,12 +1,13 @@
-/* File: atof.c */
+/* File: __atof.c */
 #include <ctype.h>
 #include <math.h>
-#define _GNU_SOURCE
+#include <stdlib.h>
 #include <stdio.h>
+//#define _GNU_SOURCE
 
-/* atof: convert string s to double */
+/* __atof: convert string s to double */
 #if 0
-double atof(char s[])
+double __atof(char s[])
 {
 	double val, power;
 	int i, sign;
@@ -29,7 +30,7 @@ double atof(char s[])
 }
 #endif
 
-double atof(char s[])
+double __atof(char s[])
 {
 	double val, power, power2;
 	int i, sign;
@@ -65,14 +66,14 @@ out:
 
 main()
 {
-	double sum, atof(char []);
+	double sum, __atof(char []);
 	char *line = NULL;
 	size_t len;
 	//int getline(char line[], int max);
 
 	sum = 0;
 	while (getline(&line, &len, stdin) > 0)
-		printf("\t%g\n", sum += atof(line));	
+		printf("\t%g\n", sum += __atof(line));	
 	if (line)
 		free(line);
 
