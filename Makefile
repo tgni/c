@@ -10,7 +10,7 @@ TARGETEXE = a_plus_1.exe align.exe alloca_test.exe array.exe atof.exe attribute.
 	  privilege.exe ptr.exe putBits.exe random.exe restrict.exe reverse.exe same_var_and_func.exe \
 	  series.exe shift.exe signedchar.exe sorting_list.exe sqrt.exe squeeze.exe stack_mem.exe \
 	  test.exe test_global_local_same.exe test_pointer.exe testwhile.exe trim_blanks.exe visible.exe \
-	  word_per_line.exe
+	  word_per_line.exe sizeof.exe test_size.exe var_test.exe
 
 # tells make to use the file "../GNU_makefile_template", which
 # defines general rules for making .o and .exe files

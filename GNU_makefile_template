@@ -57,7 +57,7 @@ $(TARGET) : $(OBJS)
 # executing "make clean" in a subdirectory will remove all
 # files named core or any file ending in .o, or .stackdump
 clean:
-	rm -rf *.o *.exe core *.stackdump .project_vim $(TARGET)
+	rm -rf *.o *.exe core *.stackdump *.dump .project_vim $(TARGET)
 
 # target to remove executable files as well as object and core files
 clobber: clean
