@@ -14,6 +14,10 @@ int main()
 		  sizeof(int), sizeof(long), sizeof(long long), sizeof(float), sizeof(double), sizeof(long double));
 	printf_s("sizeof(long int) %d sizeof(long long int) %d", 
 		  sizeof(long int), sizeof(long long int));
+	unsigned char  *p;
+	int *p1;
+	void *p2;
+	printf_s("sizeof(uint8_t *) %d sizeof(int *) %d sizeof (void *) %d\n", sizeof(p), sizeof(p1), sizeof(p2));
 
 	if (-2 + 1u >= 0)
 		printf_s("-2+1u >= 0\n");

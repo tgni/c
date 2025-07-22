@@ -1,10 +1,13 @@
 /* File: const.c */
 #include <stdio.h>
+
+enum {
+	TEST,
+	TEST2,
+	TEST3,
+};
 int main(void)
 {
-        char *cp;
-        const char *cpp;
-        //cpp = cp;
-        cp = cpp;
-
+	printf("%d %d %d\n", TEST, TEST2, TEST3);
+	return 0;
 }
